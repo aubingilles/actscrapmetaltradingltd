@@ -1,27 +1,38 @@
-
 'use client';
 import { useState } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
+
+type ContactForm = {
+  name: string;
+  email: string;
+  phone: string;
+  subject: string;
+  message: string;
+};
+
+type SubmitStatus = '' | 'success' | 'error';
 
 export default function ContactPage() {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ContactForm>({
     name: '',
     email: '',
     phone: '',
     subject: '',
-    message: ''
+    message: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState('');
+  const [submitStatus, setSubmitStatus] = useState<SubmitStatus>('');
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ 
-      ...prev,
-      [name]: value
-    }));
+  const handleInputChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const target = e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+    const name = target.name as keyof ContactForm;
+    const value = target.value as ContactForm[keyof ContactForm];
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitStatus('');
@@ -33,13 +44,16 @@ export default function ContactPage() {
       formDataToSend.append('email', formData.email);
       formDataToSend.append('phone', formData.phone);
       formDataToSend.append('subject', `Contact Form: ${formData.subject}`);
-      formDataToSend.append('message', `\nContact Form Submission from ACT Scrap Metal Website:\n\nName: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\nSubject: ${formData.subject}\n\nMessage:\n${formData.message}\n\nSubmitted: ${new Date().toLocaleString()}\n      `);
+      formDataToSend.append(
+        'message',
+        `\nContact Form Submission from ACT Scrap Metal Website:\n\nName: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\nSubject: ${formData.subject}\n\nMessage:\n${formData.message}\n\nSubmitted: ${new Date().toLocaleString()}\n`
+      );
       formDataToSend.append('from_name', 'ACT Scrap Metal Website');
       formDataToSend.append('redirect', 'false');
 
       const response = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
-        body: formDataToSend
+        body: formDataToSend,
       });
 
       const result = await response.json();
@@ -66,11 +80,10 @@ export default function ContactPage() {
       <section className="relative bg-gradient-to-br from-purple-50 to-blue-50 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-5xl font-bold text-gray-900 mb-6">
-              Contact Us
-            </h1>
+            <h1 className="text-5xl font-bold text-gray-900 mb-6">Contact Us</h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Get in touch with ACT SCRAP METAL TRADING LTD. We're here to help with all your scrap metal trading needs.
+              Get in touch with ACT SCRAP METAL TRADING LTD. We&amp;re here to help with all your
+              scrap metal trading needs.
             </p>
           </div>
         </div>
@@ -80,7 +93,6 @@ export default function ContactPage() {
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-
             {/* Contact Information */}
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-8">Get In Touch</h2>
@@ -93,8 +105,10 @@ export default function ContactPage() {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">UK Address</h3>
                     <p className="text-gray-600">
-                      44 F S ACCOUNTANTS LTD YORK STREET<br/>
-                      CLITHEROE<br/>
+                      44 F S ACCOUNTANTS LTD YORK STREET
+                      <br />
+                      CLITHEROE
+                      <br />
                       ENGLAND BB7 2DL
                     </p>
                   </div>
@@ -127,8 +141,15 @@ export default function ContactPage() {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">WhatsApp</h3>
                     <p className="text-gray-600">+44 7367067827</p>
-                    <button 
-                      onClick={() => window.open(`https://wa.me/447367067827?text=${encodeURIComponent("Hello! I'm interested in your scrap metal trading services.")}`, '_blank')}
+                    <button
+                      onClick={() =>
+                        window.open(
+                          `https://wa.me/447367067827?text=${encodeURIComponent(
+                            "Hello! I'm interested in your scrap metal trading services."
+                          )}`,
+                          '_blank'
+                        )
+                      }
                       className="text-purple-600 hover:text-purple-700 font-medium mt-2 cursor-pointer"
                     >
                       Send WhatsApp Message →
@@ -158,7 +179,8 @@ export default function ContactPage() {
                   <strong>WE TRADE GENERAL DIS TİCARET LIMITED ŞİRKETİ</strong>
                 </p>
                 <p className="text-gray-600">
-                  5219/1 Sok: No:8<br/>
+                  5219/1 Sok: No:8
+                  <br />
                   İzmir, Turkey
                 </p>
               </div>
@@ -276,7 +298,7 @@ export default function ContactPage() {
                         <i className="ri-check-circle-line text-green-600"></i>
                       </div>
                       <p className="text-green-800">
-                        Thank you for your message! We'll get back to you within 24 hours.
+                        Thank you for your message! We&amp;ll get back to you within 24 hours.
                       </p>
                     </div>
                   </div>
