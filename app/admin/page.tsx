@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { supabase } from '../../lib/supabase';
-import type { FormEvent } from 'react';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
+
 
 
 type Product = {
@@ -92,22 +92,13 @@ export default function AdminPage() {
   e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
 ) => {
   const target = e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
-  const name = target.name;
-
-  const value =
-    target instanceof HTMLInputElement && target.type === 'checkbox'
-      ? target.checked
-      : target.value;
-
-  setFormData(prev => ({
-    ...prev,
-    [name]: value,
-  }));
+  const { name, value } = target;
+  setFormData(prev => ({ ...prev, [name]: value }));
 };
 
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
     setIsSubmitting(true);
     setMessage({ type: '', text: '' });
 
