@@ -1,9 +1,7 @@
-
 'use client';
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
-import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '../../components/LanguageContext';
 import { translateProductData } from '../../lib/translator';
@@ -65,7 +63,7 @@ function ProductContent() {
   // Translate product when language changes
   useEffect(() => {
     if (product && language) {
-      const translateProduct = async () => {
+      const run = async () => {
         try {
           const translated = await translateProductData(product, language);
           setTranslatedProduct(translated);
@@ -75,7 +73,7 @@ function ProductContent() {
         }
       };
 
-      translateProduct();
+      run();
     }
   }, [product, language]);
 
@@ -85,8 +83,10 @@ function ProductContent() {
         id: 1,
         name: 'HMS Scrap Auction by Factory',
         category: 'ferrous',
-        description: 'Heavy melting steel scrap grade 1, minimum 6mm thickness, ideal for steel mills and industrial recycling. This high-quality HMS scrap comes directly from factory operations, ensuring consistent quality and composition. Perfect for steel manufacturing and heavy industry applications.',
-        image_url: 'https://readdy.ai/api/search-image?query=heavy%20melting%20steel%20HMS%20scrap%20grade%201%20thick%20steel%20plates%20industrial%20metal%20recycling%20facility%20clean%20rusty%20steel%20materials%20background%20white%20modern%20professional%20photography%20high%20quality%20detailed%20texture%20metallic%20surface&width=600&height=400&seq=hms-scrap-detail&orientation=landscape',
+        description:
+          'Heavy melting steel scrap grade 1, minimum 6mm thickness, ideal for steel mills and industrial recycling. This high-quality HMS scrap comes directly from factory operations, ensuring consistent quality and composition. Perfect for steel manufacturing and heavy industry applications.',
+        image_url:
+          'https://readdy.ai/api/search-image?query=heavy%20melting%20steel%20HMS%20scrap%20grade%201%20thick%20steel%20plates%20industrial%20metal%20recycling%20facility%20clean%20rusty%20steel%20materials%20background%20white%20modern%20professional%20photography%20high%20quality%20detailed%20texture%20metallic%20surface&width=600&height=400&seq=hms-scrap-detail&orientation=landscape',
         rating: 4.8,
         location: 'Birmingham, UK',
         seller: 'Midlands Steel Recovery',
@@ -94,14 +94,16 @@ function ProductContent() {
         min_order: '10 tonnes',
         specifications: 'Grade 1 HMS, Min thickness 6mm, Low phosphorus content',
         composition: 'Iron: 95-98%, Carbon: 0.1-0.3%, Manganese: 0.3-0.8%',
-        price: '£450/tonne'
+        price: '£450/tonne',
       },
       {
         id: 2,
         name: 'Factory Metal MS Scrap for Sale',
         category: 'ferrous',
-        description: 'High-grade mild steel scrap from factory operations, perfect for re-rolling and steel manufacturing. Sourced from reliable industrial suppliers with consistent quality standards.',
-        image_url: 'https://readdy.ai/api/search-image?query=mild%20steel%20MS%20scrap%20factory%20operations%20industrial%20metal%20recycling%20clean%20steel%20materials%20manufacturing%20background%20white%20modern%20professional%20photography%20high%20quality%20detailed%20texture&width=600&height=400&seq=ms-scrap-detail&orientation=landscape',
+        description:
+          'High-grade mild steel scrap from factory operations, perfect for re-rolling and steel manufacturing. Sourced from reliable industrial suppliers with consistent quality standards.',
+        image_url:
+          'https://readdy.ai/api/search-image?query=mild%20steel%20MS%20scrap%20factory%20operations%20industrial%20metal%20recycling%20clean%20steel%20materials%20manufacturing%20background%20white%20modern%20professional%20photography%20high%20quality%20detailed%20texture&width=600&height=400&seq=ms-scrap-detail&orientation=landscape',
         rating: 4.7,
         location: 'Sheffield, UK',
         seller: 'Sheffield Steel Works',
@@ -109,14 +111,16 @@ function ProductContent() {
         min_order: '8 tonnes',
         specifications: 'MS Grade, Low carbon content, Clean material',
         composition: 'Iron: 98-99%, Carbon: 0.05-0.25%',
-        price: '£420/tonne'
+        price: '£420/tonne',
       },
       {
         id: 3,
         name: 'Copper Millberry Wire Scrap Pure',
         category: 'non-ferrous',
-        description: 'Bright copper wire scrap, 99.9% pure, perfect for electrical industry applications and high conductivity needs. Clean, bright copper wire with no attachments.',
-        image_url: 'https://readdy.ai/api/search-image?query=bright%20copper%20wire%20millberry%20scrap%20pure%20copper%20electrical%20cables%20shiny%20copper%20materials%20high%20conductivity%20metal%20recycling%20background%20white%20modern%20professional%20photography%20high%20quality%20detailed%20texture&width=600&height=400&seq=copper-wire-detail&orientation=landscape',
+        description:
+          'Bright copper wire scrap, 99.9% pure, perfect for electrical industry applications and high conductivity needs. Clean, bright copper wire with no attachments.',
+        image_url:
+          'https://readdy.ai/api/search-image?query=bright%20copper%20wire%20millberry%20scrap%20pure%20copper%20electrical%20cables%20shiny%20copper%20materials%20high%20conductivity%20metal%20recycling%20background%20white%20modern%20professional%20photography%20high%20quality%20detailed%20texture&width=600&height=400&seq=copper-wire-detail&orientation=landscape',
         rating: 4.9,
         location: 'London, UK',
         seller: 'London Metal Traders',
@@ -124,8 +128,8 @@ function ProductContent() {
         min_order: '100 kg',
         specifications: 'Millberry Grade, 99.9% purity, No attachments',
         composition: 'Copper: 99.9%, Trace elements: 0.1%',
-        price: '£7,200/tonne'
-      }
+        price: '£7,200/tonne',
+      },
     ];
 
     return mockProducts.find(p => p.id.toString() === productId);
@@ -137,7 +141,10 @@ function ProductContent() {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('missingProductId')}</h1>
           <p className="text-gray-600 mb-6">{t('missingProductIdDesc')}</p>
-          <Link href="/products" className="bg-blue-900 text-white px-6 py-3 rounded-lg hover:bg-blue-800 transition-colors cursor-pointer">
+          <Link
+            href="/products"
+            className="bg-blue-900 text-white px-6 py-3 rounded-lg hover:bg-blue-800 transition-colors cursor-pointer"
+          >
             {t('browseProducts')}
           </Link>
         </div>
@@ -167,7 +174,10 @@ function ProductContent() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('productNotFound')}</h1>
           <p className="text-gray-600 mb-6">{t('productNotFoundDesc')}</p>
-          <Link href="/products" className="bg-blue-900 text-white px-6 py-3 rounded-lg hover:bg-blue-800 transition-colors cursor-pointer">
+          <Link
+            href="/products"
+            className="bg-blue-900 text-white px-6 py-3 rounded-lg hover:bg-blue-800 transition-colors cursor-pointer"
+          >
             {t('browseAllProducts')}
           </Link>
         </div>
@@ -178,7 +188,8 @@ function ProductContent() {
   // Use translated product if available, otherwise use original
   const displayProduct = translatedProduct || product;
 
-  const categories = {
+  // Make this a string-indexed map so TS allows dynamic indexing.
+  const categories: Record<string, string> = {
     'ferrous': t('ferrous'),
     'non-ferrous': t('nonFerrous'),
     'automotive': t('automotive'),
@@ -189,7 +200,7 @@ function ProductContent() {
     'fabric': t('fabric'),
     'machinery': t('machinery'),
     'wood': t('wood'),
-    'plastic': t('plastic')
+    'plastic': t('plastic'),
   };
 
   return (
@@ -197,11 +208,15 @@ function ProductContent() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-8">
-          <Link href="/" className="hover:text-blue-600 cursor-pointer">{t('home')}</Link>
+          <Link href="/" className="hover:text-blue-600 cursor-pointer">
+            {t('home')}
+          </Link>
           <div className="w-4 h-4 flex items-center justify-center">
             <i className="ri-arrow-right-s-line"></i>
           </div>
-          <Link href="/products" className="hover:text-blue-600 cursor-pointer">{t('products')}</Link>
+          <Link href="/products" className="hover:text-blue-600 cursor-pointer">
+            {t('products')}
+          </Link>
           <div className="w-4 h-4 flex items-center justify-center">
             <i className="ri-arrow-right-s-line"></i>
           </div>
@@ -230,7 +245,7 @@ function ProductContent() {
             {/* Category and Verification Badges */}
             <div className="flex flex-wrap gap-2">
               <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                {categories[displayProduct.category] || displayProduct.category}
+                {categories[displayProduct.category as string] || displayProduct.category}
               </span>
               {displayProduct.verified && (
                 <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium flex items-center">
@@ -250,13 +265,19 @@ function ProductContent() {
               {displayProduct.rating && (
                 <div className="flex items-center space-x-2">
                   <div className="flex items-center space-x-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
+                    {[1, 2, 3, 4, 5].map(star => (
                       <div key={star} className="w-5 h-5 flex items-center justify-center">
-                        <i className={`ri-star-${star <= Math.floor(displayProduct.rating) ? 'fill' : 'line'} text-yellow-400`}></i>
+                        <i
+                          className={`ri-star-${
+                            star <= Math.floor(displayProduct.rating) ? 'fill' : 'line'
+                          } text-yellow-400`}
+                        ></i>
                       </div>
                     ))}
                   </div>
-                  <span className="text-gray-600 font-medium">{displayProduct.rating} {t('outOf5')}</span>
+                  <span className="text-gray-600 font-medium">
+                    {displayProduct.rating} {t('outOf5')}
+                  </span>
                 </div>
               )}
             </div>
@@ -350,26 +371,26 @@ function ProductContent() {
                 </div>
                 <div>
                   <h4 className="font-semibold text-blue-900 mb-1">{t('needHelp')}</h4>
-                  <p className="text-blue-800 text-sm">
-                    {t('needHelpDesc')}
-                  </p>
+                  <p className="text-blue-800 text-sm">{t('needHelpDesc')}</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </div> 
     </div>
   );
 }
 
 export default function ProductPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-lg">Loading product...</div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="text-lg">Loading product...</div>
+        </div>
+      }
+    >
       <ProductContent />
     </Suspense>
   );
