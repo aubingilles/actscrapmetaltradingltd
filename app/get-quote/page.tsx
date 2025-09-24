@@ -1,9 +1,22 @@
-
 'use client';
 import { useState } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
+
+type QuoteForm = {
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+  location: string;
+  materials: string;
+  quantity: string;
+  description: string;
+  urgency: 'standard' | 'urgent' | string;
+  preferredContact: 'email' | 'phone' | string;
+};
 
 export default function GetQuotePage() {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<QuoteForm>({
     name: '',
     email: '',
     phone: '',
@@ -13,30 +26,44 @@ export default function GetQuotePage() {
     quantity: '',
     description: '',
     urgency: 'standard',
-    preferredContact: 'email'
+    preferredContact: 'email',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [submitError, setSubmitError] = useState('');
+  const [submitError, setSubmitError] = useState<string>('');
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
+  const handleInputChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const target = e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+    const name = target.name as keyof QuoteForm;
+
+    const value =
+      target instanceof HTMLInputElement && target.type === 'checkbox'
+        ? (target.checked as unknown as QuoteForm[keyof QuoteForm])
+        : (target.value as QuoteForm[keyof QuoteForm]);
+
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitError('');
 
     try {
       const formBody = new FormData();
-      formBody.append('access_key', '8fb35564-594f-43ec-915f-637f0394c489'); 
+      formBody.append('access_key', '8fb35564-594f-43ec-915f-637f0394c489');
       formBody.append('name', formData.name);
       formBody.append('email', formData.email);
-      formBody.append('subject', `Quote Request from ${formData.name} - ${formData.materials}`);
-      formBody.append('message', `
+      formBody.append(
+        'subject',
+        `Quote Request from ${formData.name} - ${formData.materials}`
+      );
+      formBody.append(
+        'message',
+        `
 Quote Request from ACT Scrap Metal Website:
 
 CUSTOMER INFORMATION:
@@ -56,13 +83,14 @@ Urgency: ${formData.urgency}
 Preferred Contact: ${formData.preferredContact}
 
 Submitted: ${new Date().toLocaleString()}
-      `);
+      `
+      );
       formBody.append('from_name', 'ACT Scrap Metal Website');
       formBody.append('redirect', 'false');
 
       const response = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
-        body: formBody
+        body: formBody,
       });
 
       const result = await response.json();
@@ -79,14 +107,16 @@ Submitted: ${new Date().toLocaleString()}
           quantity: '',
           description: '',
           urgency: 'standard',
-          preferredContact: 'email'
+          preferredContact: 'email',
         });
       } else {
         throw new Error(result.message || 'Failed to send quote request');
       }
     } catch (error) {
       console.error('Form submission error:', error);
-      setSubmitError('Sorry, there was an error submitting your quote request. Please try again or contact us directly at +44 7367067827.');
+      setSubmitError(
+        'Sorry, there was an error submitting your quote request. Please try again or contact us directly at +44 7367067827.'
+      );
     } finally {
       setIsSubmitting(false);
     }
