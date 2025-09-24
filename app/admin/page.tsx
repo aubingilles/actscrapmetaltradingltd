@@ -3,13 +3,41 @@ import { useState, useEffect } from 'react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { supabase } from '../../lib/supabase';
+import type { ChangeEvent, FormEvent } from 'react';
+
+type Product = {
+  id: string;
+  name: string;
+  category: string;
+  description?: string;
+  image_url?: string;
+  location?: string;
+  seller?: string;
+  verified?: boolean;
+  min_order?: string;
+  rating?: number;
+  created_at?: string;
+  updated_at?: string;
+};
+
+type ProductForm = {
+  name: string;
+  category: string;
+  description: string;
+  image_url: string;
+  location: string;
+  seller: string;
+  verified: boolean;
+  min_order: string;
+  rating: number;
+};
 
 export default function AdminPage() {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [formData, setFormData] = useState({
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [formData, setFormData] = useState<ProductForm>({
     name: '',
     category: 'ferrous',
     description: '',
@@ -49,7 +77,7 @@ export default function AdminPage() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProducts(data || []);
+      setProducts((data as Product[]) ?? []);
     } catch (error) {
       console.error('Error fetching products:', error);
       setMessage({ type: 'error', text: 'Failed to load products' });
@@ -58,7 +86,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -66,7 +94,7 @@ export default function AdminPage() {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setMessage({ type: '', text: '' });
@@ -102,7 +130,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleEdit = (product) => {
+  const handleEdit = (product: Product) => {
     setEditingProduct(product);
     setFormData({
       name: product.name,
@@ -118,7 +146,7 @@ export default function AdminPage() {
     setShowForm(true);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
