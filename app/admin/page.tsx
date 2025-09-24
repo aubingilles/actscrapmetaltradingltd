@@ -4,6 +4,8 @@ import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { supabase } from '../../lib/supabase';
 import type { ChangeEvent, FormEvent } from 'react';
+import type { ChangeEvent } from 'react';
+
 
 type Product = {
   id: string;
@@ -86,13 +88,23 @@ export default function AdminPage() {
     }
   };
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
+ const handleInputChange = (
+  e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+) => {
+  const target = e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+  const name = target.name;
+
+  const value =
+    target instanceof HTMLInputElement && target.type === 'checkbox'
+      ? target.checked
+      : target.value;
+
+  setFormData(prev => ({
+    ...prev,
+    [name]: value,
+  }));
+};
+
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
