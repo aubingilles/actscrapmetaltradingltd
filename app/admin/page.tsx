@@ -1,15 +1,47 @@
 'use client';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { supabase } from '../../lib/supabase';
 
+// ---- Add types ----
+type CategoryId =
+  | 'ferrous' | 'non-ferrous' | 'automotive' | 'electronics' | 'industrial'
+  | 'cables' | 'paper' | 'fabric' | 'machinery' | 'wood' | 'plastic';
+
+interface Product {
+  id: string;
+  name: string;
+  category: CategoryId | string;
+  description?: string;
+  image_url?: string;
+  location?: string;
+  seller?: string;
+  verified?: boolean;
+  min_order?: string;
+  rating?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export default function AdminPage() {
-  const [products, setProducts] = useState([]);
+  // 👇 give state an explicit type
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [formData, setFormData] = useState({
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [formData, setFormData] = useState<{
+    name: string;
+    category: CategoryId | string;
+    description: string;
+    image_url: string;
+    location: string;
+    seller: string;
+    verified: boolean;
+    min_order: string;
+    rating: number;
+  }>({
     name: '',
     category: 'ferrous',
     description: '',
@@ -18,12 +50,12 @@ export default function AdminPage() {
     seller: '',
     verified: false,
     min_order: '',
-    rating: 4.5
+    rating: 4.5,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
+  const [message, setMessage] = useState<{ type: '' | 'success' | 'error'; text: string }>({ type: '', text: '' });
 
-  const categories = [
+  const categories: { id: CategoryId; name: string }[] = [
     { id: 'ferrous', name: 'Ferrous Metals' },
     { id: 'non-ferrous', name: 'Non-Ferrous Metals' },
     { id: 'automotive', name: 'Automotive Scrap' },
@@ -34,12 +66,10 @@ export default function AdminPage() {
     { id: 'fabric', name: 'Fabric & Textile' },
     { id: 'machinery', name: 'Machinery & Equipment' },
     { id: 'wood', name: 'Wood & Timber' },
-    { id: 'plastic', name: 'Plastic Scrap' }
+    { id: 'plastic', name: 'Plastic Scrap' },
   ];
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  useEffect(() => { void fetchProducts(); }, []);
 
   const fetchProducts = async () => {
     try {
@@ -49,7 +79,7 @@ export default function AdminPage() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProducts(data || []);
+      setProducts((data as Product[]) ?? []);
     } catch (error) {
       console.error('Error fetching products:', error);
       setMessage({ type: 'error', text: 'Failed to load products' });
@@ -58,15 +88,17 @@ export default function AdminPage() {
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setMessage({ type: '', text: '' });
@@ -75,25 +107,18 @@ export default function AdminPage() {
       if (editingProduct) {
         const { error } = await supabase
           .from('products')
-          .update({
-            ...formData,
-            updated_at: new Date().toISOString()
-          })
+          .update({ ...formData, updated_at: new Date().toISOString() })
           .eq('id', editingProduct.id);
-
         if (error) throw error;
         setMessage({ type: 'success', text: 'Product updated successfully!' });
       } else {
-        const { error } = await supabase
-          .from('products')
-          .insert([formData]);
-
+        const { error } = await supabase.from('products').insert([formData]);
         if (error) throw error;
         setMessage({ type: 'success', text: 'Product created successfully!' });
       }
 
       resetForm();
-      fetchProducts();
+      void fetchProducts();
     } catch (error) {
       console.error('Error saving product:', error);
       setMessage({ type: 'error', text: 'Failed to save product. Please try again.' });
@@ -102,34 +127,29 @@ export default function AdminPage() {
     }
   };
 
-  const handleEdit = (product) => {
+  const handleEdit = (product: Product) => {
     setEditingProduct(product);
     setFormData({
       name: product.name,
       category: product.category,
-      description: product.description || '',
-      image_url: product.image_url || '',
-      location: product.location || '',
-      seller: product.seller || '',
-      verified: product.verified || false,
-      min_order: product.min_order || '',
-      rating: product.rating || 4.5
+      description: product.description ?? '',
+      image_url: product.image_url ?? '',
+      location: product.location ?? '',
+      seller: product.seller ?? '',
+      verified: product.verified ?? false,
+      min_order: product.min_order ?? '',
+      rating: product.rating ?? 4.5,
     });
     setShowForm(true);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
-
     try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) throw error;
       setMessage({ type: 'success', text: 'Product deleted successfully!' });
-      fetchProducts();
+      void fetchProducts();
     } catch (error) {
       console.error('Error deleting product:', error);
       setMessage({ type: 'error', text: 'Failed to delete product' });
@@ -146,7 +166,7 @@ export default function AdminPage() {
       seller: '',
       verified: false,
       min_order: '',
-      rating: 4.5
+      rating: 4.5,
     });
     setEditingProduct(null);
     setShowForm(false);
