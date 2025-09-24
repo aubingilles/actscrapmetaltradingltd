@@ -1,11 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { supabase } from '../../lib/supabase';
-import type { ChangeEvent, FormEvent } from 'react';
-
-
 
 type Product = {
   id: string;
@@ -48,12 +46,15 @@ export default function AdminPage() {
     seller: '',
     verified: false,
     min_order: '',
-    rating: 4.5
+    rating: 4.5,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
+  const [message, setMessage] = useState<{ type: '' | 'success' | 'error'; text: string }>({
+    type: '',
+    text: '',
+  });
 
-  const categories = [
+  const categories: { id: string; name: string }[] = [
     { id: 'ferrous', name: 'Ferrous Metals' },
     { id: 'non-ferrous', name: 'Non-Ferrous Metals' },
     { id: 'automotive', name: 'Automotive Scrap' },
@@ -64,14 +65,14 @@ export default function AdminPage() {
     { id: 'fabric', name: 'Fabric & Textile' },
     { id: 'machinery', name: 'Machinery & Equipment' },
     { id: 'wood', name: 'Wood & Timber' },
-    { id: 'plastic', name: 'Plastic Scrap' }
+    { id: 'plastic', name: 'Plastic Scrap' },
   ];
 
   useEffect(() => {
-    fetchProducts();
+    void fetchProducts();
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (): Promise<void> => {
     try {
       const { data, error } = await supabase
         .from('products')
@@ -88,17 +89,27 @@ export default function AdminPage() {
     }
   };
 
- const handleInputChange = (
-  e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-) => {
-  const target = e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
-  const { name, value } = target;
-  setFormData(prev => ({ ...prev, [name]: value }));
-};
+  const handleInputChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const target = e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+    const name = target.name as keyof ProductForm;
 
+    let newValue: ProductForm[keyof ProductForm];
+    if (target instanceof HTMLInputElement && target.type === 'checkbox') {
+      newValue = target.checked as ProductForm[keyof ProductForm];
+    } else if (name === 'rating') {
+      const raw = (target as HTMLInputElement).value;
+      newValue = (raw === '' ? 0 : parseFloat(raw)) as ProductForm[keyof ProductForm];
+    } else {
+      newValue = target.value as ProductForm[keyof ProductForm];
+    }
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
+    setFormData(prev => ({ ...prev, [name]: newValue } as ProductForm));
+  };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setIsSubmitting(true);
     setMessage({ type: '', text: '' });
 
@@ -108,23 +119,20 @@ export default function AdminPage() {
           .from('products')
           .update({
             ...formData,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
           .eq('id', editingProduct.id);
 
         if (error) throw error;
         setMessage({ type: 'success', text: 'Product updated successfully!' });
       } else {
-        const { error } = await supabase
-          .from('products')
-          .insert([formData]);
-
+        const { error } = await supabase.from('products').insert([formData]);
         if (error) throw error;
         setMessage({ type: 'success', text: 'Product created successfully!' });
       }
 
       resetForm();
-      fetchProducts();
+      await fetchProducts();
     } catch (error) {
       console.error('Error saving product:', error);
       setMessage({ type: 'error', text: 'Failed to save product. Please try again.' });
@@ -138,13 +146,13 @@ export default function AdminPage() {
     setFormData({
       name: product.name,
       category: product.category,
-      description: product.description || '',
-      image_url: product.image_url || '',
-      location: product.location || '',
-      seller: product.seller || '',
-      verified: product.verified || false,
-      min_order: product.min_order || '',
-      rating: product.rating || 4.5
+      description: product.description ?? '',
+      image_url: product.image_url ?? '',
+      location: product.location ?? '',
+      seller: product.seller ?? '',
+      verified: product.verified ?? false,
+      min_order: product.min_order ?? '',
+      rating: product.rating ?? 4.5,
     });
     setShowForm(true);
   };
@@ -153,14 +161,10 @@ export default function AdminPage() {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) throw error;
       setMessage({ type: 'success', text: 'Product deleted successfully!' });
-      fetchProducts();
+      await fetchProducts();
     } catch (error) {
       console.error('Error deleting product:', error);
       setMessage({ type: 'error', text: 'Failed to delete product' });
@@ -177,7 +181,7 @@ export default function AdminPage() {
       seller: '',
       verified: false,
       min_order: '',
-      rating: 4.5
+      rating: 4.5,
     });
     setEditingProduct(null);
     setShowForm(false);
@@ -202,14 +206,36 @@ export default function AdminPage() {
           </div>
 
           {message.text && (
-            <div className={`p-4 rounded-lg mb-6 ${
-              message.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-            }`}>
+            <div
+              className={`p-4 rounded-lg mb-6 ${
+                message.type === 'success'
+                  ? 'bg-green-50 border border-green-200'
+                  : message.type === 'error'
+                  ? 'bg-red-50 border border-red-200'
+                  : 'bg-gray-50 border border-gray-200'
+              }`}
+            >
               <div className="flex items-center">
                 <div className="w-6 h-6 flex items-center justify-center mr-3">
-                  <i className={`${message.type === 'success' ? 'ri-check-line text-green-600' : 'ri-error-warning-line text-red-600'}`}></i>
+                  <i
+                    className={`${
+                      message.type === 'success'
+                        ? 'ri-check-line text-green-600'
+                        : message.type === 'error'
+                        ? 'ri-error-warning-line text-red-600'
+                        : 'ri-information-line text-gray-600'
+                    }`}
+                  ></i>
                 </div>
-                <p className={message.type === 'success' ? 'text-green-800' : 'text-red-800'}>
+                <p
+                  className={
+                    message.type === 'success'
+                      ? 'text-green-800'
+                      : message.type === 'error'
+                      ? 'text-red-800'
+                      : 'text-gray-800'
+                  }
+                >
                   {message.text}
                 </p>
               </div>
@@ -243,7 +269,10 @@ export default function AdminPage() {
                   </div>
 
                   <div>
-                    <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="category"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Category *
                     </label>
                     <select
@@ -255,14 +284,19 @@ export default function AdminPage() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 cursor-pointer pr-8"
                     >
                       {categories.map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
                       ))}
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="description"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Description
                   </label>
                   <textarea
@@ -275,7 +309,9 @@ export default function AdminPage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none"
                     placeholder="Enter product description (max 500 characters)"
                   />
-                  <p className="text-xs text-gray-500 mt-1">{formData.description.length}/500 characters</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.description.length}/500 characters
+                  </p>
                 </div>
 
                 <div>
@@ -305,7 +341,7 @@ export default function AdminPage() {
                       value={formData.location}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                      placeholder="City, UK"
+                      placeholder="City, Country"
                     />
                   </div>
 
@@ -343,7 +379,7 @@ export default function AdminPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label htmlFor="rating" className="block text-sm font-medium text-gray-700 mb-2">
-                      Rating (1-5)
+                      Rating (1–5)
                     </label>
                     <input
                       type="number"
@@ -351,9 +387,9 @@ export default function AdminPage() {
                       name="rating"
                       value={formData.rating}
                       onChange={handleInputChange}
-                      min="1"
-                      max="5"
-                      step="0.1"
+                      min={1}
+                      max={5}
+                      step={0.1}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                     />
                   </div>
@@ -386,7 +422,7 @@ export default function AdminPage() {
                     disabled={isSubmitting}
                     className="bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer whitespace-nowrap"
                   >
-                    {isSubmitting ? 'Saving...' : (editingProduct ? 'Update Product' : 'Create Product')}
+                    {isSubmitting ? 'Saving...' : editingProduct ? 'Update Product' : 'Create Product'}
                   </button>
                 </div>
               </form>
@@ -417,16 +453,28 @@ export default function AdminPage() {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Product
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Category
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Location
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Rating
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {products.map((product) => (
+                    {products.map((product: Product) => (
                       <tr key={product.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4">
                           <div className="flex items-center">
