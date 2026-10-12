@@ -28,6 +28,9 @@ alter table public.products add column if not exists rating numeric(2,1);
 alter table public.products add column if not exists created_at timestamptz not null default now();
 alter table public.products add column if not exists updated_at timestamptz not null default now();
 
+create index if not exists products_category_idx on public.products (category);
+create index if not exists products_created_at_idx on public.products (created_at desc);
+
 -- Store categories in the form the website filters on ("Non Ferrous" -> "non-ferrous").
 update public.products
 set category = regexp_replace(lower(trim(category)), '[\s_]+', '-', 'g')
@@ -77,6 +80,11 @@ create policy "Admins can delete products"
   on public.products for delete
   to authenticated
   using (true);
+
+-- Visitors may only read; writes go through the signed-in admin policies above.
+grant select on public.products to anon;
+revoke insert, update, delete, truncate, references, trigger on public.products from anon;
+grant select, insert, update, delete on public.products to authenticated;
 
 -- Admin accounts: Supabase dashboard -> Authentication -> Users -> "Add user"
 -- (tick "Auto Confirm User"). Then turn off public sign-ups under
