@@ -19,6 +19,10 @@ export const supabase = createClient(
   supabaseAnonKey || 'not-configured'
 )
 
+// Columns visitors may read. source_url is admin-only and is not granted to the anon role.
+export const PUBLIC_PRODUCT_COLUMNS =
+  'id, name, category, description, image_url, location, seller, verified, min_order, rating, created_at, updated_at'
+
 export const CATEGORIES: { id: string; name: string }[] = [
   { id: 'ferrous', name: 'Ferrous Metals' },
   { id: 'non-ferrous', name: 'Non-Ferrous Metals' },

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase, CATEGORIES, errorMessage } from '../../lib/supabase';
+import { handleImageError } from '../../lib/images';
 
 type Product = {
   id: string;
@@ -10,6 +11,7 @@ type Product = {
   category: string;
   description?: string;
   image_url?: string;
+  source_url?: string;
   location?: string;
   seller?: string;
   verified?: boolean;
@@ -24,6 +26,7 @@ type ProductForm = {
   category: string;
   description: string;
   image_url: string;
+  source_url: string;
   location: string;
   seller: string;
   verified: boolean;
@@ -41,6 +44,7 @@ export default function AdminPage() {
     category: 'ferrous',
     description: '',
     image_url: '',
+    source_url: '',
     location: '',
     seller: '',
     verified: false,
@@ -100,6 +104,7 @@ export default function AdminPage() {
     category: form.category,
     description: form.description.trim() || null,
     image_url: form.image_url.trim() || null,
+    source_url: form.source_url.trim() || null,
     location: form.location.trim() || null,
     seller: form.seller.trim() || null,
     verified: form.verified,
@@ -180,6 +185,7 @@ export default function AdminPage() {
       category: product.category,
       description: product.description ?? '',
       image_url: product.image_url ?? '',
+      source_url: product.source_url ?? '',
       location: product.location ?? '',
       seller: product.seller ?? '',
       verified: product.verified ?? false,
@@ -209,6 +215,7 @@ export default function AdminPage() {
       category: 'ferrous',
       description: '',
       image_url: '',
+      source_url: '',
       location: '',
       seller: '',
       verified: false,
@@ -410,6 +417,24 @@ export default function AdminPage() {
                   />
                 </div>
 
+                <div>
+                  <label htmlFor="source_url" className="block text-sm font-medium text-gray-700 mb-2">
+                    Source Listing URL
+                  </label>
+                  <input
+                    type="url"
+                    id="source_url"
+                    name="source_url"
+                    value={formData.source_url}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    placeholder="https://seller-website.co.uk/listing"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Where this product was found. Only visible to admins.
+                  </p>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
                     <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
@@ -562,6 +587,8 @@ export default function AdminPage() {
                             {product.image_url && (
                               <img
                                 src={product.image_url}
+                                referrerPolicy="no-referrer"
+                                onError={handleImageError}
                                 alt={product.name}
                                 className="w-12 h-12 rounded-lg object-cover object-top mr-4"
                               />
@@ -569,6 +596,16 @@ export default function AdminPage() {
                             <div>
                               <div className="text-sm font-medium text-gray-900">{product.name}</div>
                               <div className="text-sm text-gray-500">{product.seller}</div>
+                              {product.source_url && (
+                                <a
+                                  href={product.source_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-purple-600 hover:text-purple-800"
+                                >
+                                  View source listing
+                                </a>
+                              )}
                             </div>
                           </div>
                         </td>

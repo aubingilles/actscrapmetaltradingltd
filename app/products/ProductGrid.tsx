@@ -1,7 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { supabase, normalizeCategory, errorMessage } from '../../lib/supabase';
+import { supabase, normalizeCategory, errorMessage, PUBLIC_PRODUCT_COLUMNS } from '../../lib/supabase';
+import { handleImageError } from '../../lib/images';
 
 interface Product {
   id: string | number;
@@ -54,7 +55,7 @@ export default function ProductGrid({ category, sortBy, priceRange }: ProductGri
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select(PUBLIC_PRODUCT_COLUMNS)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -152,6 +153,8 @@ export default function ProductGrid({ category, sortBy, priceRange }: ProductGri
               {product.image_url ? (
                 <img
                   src={product.image_url}
+                  referrerPolicy="no-referrer"
+                  onError={handleImageError}
                   alt={product.name}
                   className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
                 />

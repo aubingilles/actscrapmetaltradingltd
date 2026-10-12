@@ -4,7 +4,8 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '../../components/LanguageContext';
 import { translateProductData } from '../../lib/translator';
-import { supabase } from '../../lib/supabase';
+import { supabase, PUBLIC_PRODUCT_COLUMNS } from '../../lib/supabase';
+import { handleImageError } from '../../lib/images';
 
 
 function ProductContent() {
@@ -29,7 +30,7 @@ function ProductContent() {
 
         const { data, error } = await supabase
           .from('products')
-          .select('*')
+          .select(PUBLIC_PRODUCT_COLUMNS)
           .eq('id', id)
           .single();
 
@@ -226,6 +227,8 @@ function ProductContent() {
               {displayProduct.image_url ? (
                 <img
                   src={displayProduct.image_url}
+                  referrerPolicy="no-referrer"
+                  onError={handleImageError}
                   alt={displayProduct.name}
                   className="w-full h-full object-cover object-top"
                 />
