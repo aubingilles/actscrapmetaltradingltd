@@ -83,10 +83,7 @@ create policy "Admins can delete products"
   using (true);
 
 -- Visitors may only read; writes go through the signed-in admin policies above.
--- Column-level read grant so anonymous visitors cannot read source_url.
-revoke select on public.products from anon;
-grant select (id, name, category, description, image_url, location, seller, verified,
-              min_order, rating, created_at, updated_at) on public.products to anon;
+grant select on public.products to anon;
 revoke insert, update, delete, truncate, references, trigger on public.products from anon;
 grant select, insert, update, delete on public.products to authenticated;
 
