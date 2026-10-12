@@ -1,10 +1,19 @@
 
 'use client';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from './LanguageContext';
+import { fetchCategoryCounts } from '../lib/supabase';
 
 export default function ProductCategories() {
   const { t } = useLanguage();
+  const [counts, setCounts] = useState<Record<string, number> | null>(null);
+
+  useEffect(() => {
+    fetchCategoryCounts()
+      .then(({ counts }) => setCounts(counts))
+      .catch(error => console.error('Error fetching category counts:', error));
+  }, []);
 
   const categories = [
     {
@@ -13,7 +22,6 @@ export default function ProductCategories() {
       description: t('ferrousDesc'),
       icon: 'ri-tools-line',
       image: 'https://readdy.ai/api/search-image?query=ferrous%20steel%20metal%20scrap%20industrial%20recycling%20facility%20heavy%20melting%20steel%20HMS%20grade%20materials%20processing%20yard%20clean%20background%20modern%20professional%20photography%20high%20quality%20detailed%20texture&width=400&height=300&seq=ferrous-category&orientation=landscape',
-      products: 3,
       color: 'blue',
       link: '/products?category=ferrous'
     },
@@ -23,7 +31,6 @@ export default function ProductCategories() {
       description: t('nonFerrousDesc'),
       icon: 'ri-copper-coin-line',
       image: 'https://readdy.ai/api/search-image?query=copper%20wire%20aluminum%20non-ferrous%20metal%20scrap%20bright%20shiny%20copper%20cables%20electrical%20recycling%20materials%20clean%20industrial%20background%20modern%20professional%20photography%20high%20quality%20detailed%20texture&width=400&height=300&seq=nonferrous-category&orientation=landscape',
-      products: 3,
       color: 'orange',
       link: '/products?category=non-ferrous'
     },
@@ -33,7 +40,6 @@ export default function ProductCategories() {
       description: t('automotiveDesc'),
       icon: 'ri-car-line',
       image: 'https://readdy.ai/api/search-image?query=automotive%20car%20scrap%20metal%20parts%20recycling%20junkyard%20vehicle%20dismantling%20steel%20aluminum%20components%20industrial%20background%20white%20modern%20professional%20photography%20high%20quality%20detailed%20texture&width=400&height=300&seq=automotive-scrap-cat&orientation=landscape',
-      products: 2,
       color: 'red',
       link: '/products?category=automotive'
     },
@@ -43,7 +49,6 @@ export default function ProductCategories() {
       description: t('electronicsDesc'),
       icon: 'ri-computer-line',
       image: 'https://readdy.ai/api/search-image?query=electronic%20waste%20e-waste%20circuit%20boards%20computer%20parts%20cables%20precious%20metals%20recovery%20recycling%20technology%20scrap%20industrial%20background%20white%20modern%20professional%20photography%20high%20quality%20detailed%20texture&width=400&height=300&seq=electronic-waste-cat&orientation=landscape',
-      products: 2,
       color: 'green',
       link: '/products?category=electronics'
     },
@@ -53,7 +58,6 @@ export default function ProductCategories() {
       description: t('industrialDesc'),
       icon: 'ri-factory-line',
       image: 'https://readdy.ai/api/search-image?query=industrial%20scrap%20heavy%20machinery%20equipment%20structural%20steel%20manufacturing%20waste%20metal%20recycling%20factory%20components%20industrial%20background%20white%20modern%20professional%20photography%20high%20quality%20detailed%20texture&width=400&height=300&seq=industrial-scrap-cat&orientation=landscape',
-      products: 1,
       color: 'indigo',
       link: '/products?category=industrial'
     },
@@ -63,7 +67,6 @@ export default function ProductCategories() {
       description: t('cablesDesc'),
       icon: 'ri-plug-line',
       image: 'https://readdy.ai/api/search-image?query=copper%20cable%20insulated%20scrap%20electrical%20wires%20stripping%20copper%20recovery%20orange%20insulation%20cables%20industrial%20background%20white%20modern%20professional%20photography%20high%20quality%20detailed%20texture&width=400&height=300&seq=cable-wire-category&orientation=landscape',
-      products: 2,
       color: 'yellow',
       link: '/products?category=cables'
     },
@@ -73,7 +76,6 @@ export default function ProductCategories() {
       description: t('paperDesc'),
       icon: 'ri-file-paper-line',
       image: 'https://readdy.ai/api/search-image?query=recycled%20paper%20cardboard%20rolls%20industrial%20paper%20mill%20recycling%20facility%20clean%20white%20paper%20materials%20sustainable%20processing%20modern%20professional%20photography%20high%20quality%20detailed%20texture&width=400&height=300&seq=paper-category&orientation=landscape',
-      products: 2,
       color: 'teal',
       link: '/products?category=paper'
     },
@@ -83,7 +85,6 @@ export default function ProductCategories() {
       description: t('fabricDesc'),
       icon: 'ri-shirt-line',
       image: 'https://readdy.ai/api/search-image?query=textile%20fabric%20materials%20cotton%20polyester%20recycling%20industrial%20fabric%20processing%20colorful%20fabric%20rolls%20textile%20waste%20sorting%20clean%20background%20modern%20professional%20photography%20high%20quality%20detailed%20texture&width=400&height=300&seq=textile-category&orientation=landscape',
-      products: 2,
       color: 'pink',
       link: '/products?category=fabric'
     },
@@ -93,7 +94,6 @@ export default function ProductCategories() {
       description: t('machineryDesc'),
       icon: 'ri-settings-3-line',
       image: 'https://readdy.ai/api/search-image?query=industrial%20machinery%20equipment%20manufacturing%20heavy%20machinery%20factory%20equipment%20resale%20scrap%20metal%20processing%20equipment%20clean%20industrial%20background%20white%20modern%20professional%20photography%20high%20quality%20detailed%20texture&width=400&height=300&seq=machinery-category&orientation=landscape',
-      products: 2,
       color: 'gray',
       link: '/products?category=machinery'
     },
@@ -103,7 +103,6 @@ export default function ProductCategories() {
       description: t('woodDesc'),
       icon: 'ri-tree-line',
       image: 'https://readdy.ai/api/search-image?query=waste%20wood%20timber%20scraps%20wooden%20pallets%20construction%20wood%20materials%20recycling%20biomass%20fuel%20production%20clean%20wood%20background%20white%20modern%20professional%20photography%20high%20quality%20detailed%20texture&width=400&height=300&seq=wood-category&orientation=landscape',
-      products: 2,
       color: 'amber',
       link: '/products?category=wood'
     },
@@ -113,7 +112,6 @@ export default function ProductCategories() {
       description: t('plasticDesc'),
       icon: 'ri-recycle-line',
       image: 'https://readdy.ai/api/search-image?query=plastic%20scrap%20HDPE%20PP%20PET%20PVC%20granulation%20recycling%20colorful%20plastic%20materials%20sorted%20plastic%20waste%20clean%20industrial%20background%20white%20modern%20professional%20photography%20high%20quality%20detailed%20texture&width=400&height=300&seq=plastic-category&orientation=landscape',
-      products: 3,
       color: 'green',
       link: '/products?category=plastic'
     }
@@ -162,7 +160,7 @@ export default function ProductCategories() {
                   </div>
                 </div>
                 <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-gray-700">
-                  {category.products} {t('items')}
+                  {counts?.[category.link.split('=')[1]] ?? 0} {t('items')}
                 </div>
               </div>
               <div className="p-6">

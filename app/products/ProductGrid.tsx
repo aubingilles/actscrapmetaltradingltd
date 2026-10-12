@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { supabase } from '../../lib/supabase';
+import { supabase, normalizeCategory, errorMessage } from '../../lib/supabase';
 
 interface Product {
   id: string | number;
@@ -27,6 +27,7 @@ interface ProductGridProps {
 export default function ProductGrid({ category, sortBy, priceRange }: ProductGridProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   const categories: Record<string, string> = {
     'ferrous': 'Ferrous',
@@ -49,109 +50,27 @@ export default function ProductGrid({ category, sortBy, priceRange }: ProductGri
 
   const fetchProducts = async () => {
     setIsLoading(true);
+    setLoadError('');
     try {
-      let query = supabase.from('products').select('*');
-
-      if (category !== 'all') {
-        query = query.eq('category', category);
-      }
-
-      switch (sortBy) {
-        case 'newest':
-          query = query.order('created_at', { ascending: false });
-          break;
-        case 'rating':
-          query = query.order('rating', { ascending: false });
-          break;
-        case 'alphabetical':
-          query = query.order('name', { ascending: true });
-          break;
-        default:
-          query = query.order('created_at', { ascending: false });
-      }
-
-      const { data, error } = await query;
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Optional client-side price filter if you decide to use priceRange later
-      const typed = (data as Product[]) ?? [];
-      setProducts(typed);
+      // Filter on the client so stored values like "Ferrous" or "non ferrous" still match.
+      const all = (data as Product[]) ?? [];
+      setProducts(
+        category === 'all' ? all : all.filter(p => normalizeCategory(p.category) === category)
+      );
     } catch (error) {
       console.error('Error fetching products:', error);
-      const mockProducts = getMockProducts();
-      const filteredMockProducts =
-        category === 'all' ? mockProducts : mockProducts.filter(p => p.category === category);
-      setProducts(filteredMockProducts);
+      setProducts([]);
+      setLoadError(errorMessage(error));
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const getMockProducts = (): Product[] => {
-    return [
-      {
-        id: 1,
-        name: 'HMS Scrap Auction by Factory',
-        slug: 'hms-scrap-auction-by-factory',
-        category: 'ferrous',
-        description:
-          'Heavy melting steel scrap grade 1, minimum 6mm thickness, ideal for steel mills and industrial recycling.',
-        image_url:
-          'https://readdy.ai/api/search-image?query=heavy%20melting%20steel%20HMS%20scrap%20grade%201%20thick%20steel%20plates%20industrial%20metal%20recycling%20facility%20clean%20rusty%20steel%20materials%20background%20white%20modern%20professional%20photography%20high%20quality%20detailed%20texture&width=400&height=300&seq=hms-scrap-grid&orientation=landscape',
-        rating: 4.8,
-        location: 'Birmingham, UK',
-        seller: 'Midlands Steel Recovery',
-        verified: true,
-        min_order: '10 tonnes',
-      },
-      {
-        id: 2,
-        name: 'Factory Metal MS Scrap for Sale',
-        slug: 'factory-metal-ms-scrap-for-sale',
-        category: 'ferrous',
-        description:
-          'High-grade mild steel scrap from factory operations, perfect for re-rolling and steel manufacturing.',
-        image_url:
-          'https://readdy.ai/api/search-image?query=mild%20steel%20MS%20scrap%20factory%20operations%20industrial%20metal%20recycling%20clean%20steel%20materials%20manufacturing%20background%20white%20modern%20professional%20photography%20high%20quality%20detailed%20texture&width=400&height=300&seq=ms-scrap-grid&orientation=landscape',
-        rating: 4.7,
-        location: 'Sheffield, UK',
-        seller: 'Sheffield Steel Works',
-        verified: true,
-        min_order: '8 tonnes',
-      },
-      {
-        id: 3,
-        name: 'Stainless Steel 316 Industrial Grade',
-        slug: 'stainless-steel-316-industrial-grade',
-        category: 'ferrous',
-        description:
-          'High-grade stainless steel 316 scrap from food processing and chemical industries with excellent corrosion resistance.',
-        image_url:
-          'https://readdy.ai/api/search-image?query=stainless%20steel%20316%20scrap%20food%20processing%20chemical%20industry%20shiny%20silver%20metal%20industrial%20recycling%20background%20white%20modern%20professional%20photography%20high%20quality%20detailed%20texture&width=400&height=300&seq=stainless-steel-316&orientation=landscape',
-        rating: 4.9,
-        location: 'London, UK',
-        seller: 'Premium Steel Traders',
-        verified: true,
-        min_order: '250 kg',
-      },
-      {
-        id: 4,
-        name: 'Copper Millberry Wire Scrap Pure',
-        slug: 'copper-millberry-wire-scrap-pure',
-        category: 'non-ferrous',
-        description:
-          'Bright copper wire scrap, 99.9% pure, perfect for electrical industry applications and high conductivity needs.',
-        image_url:
-          'https://readdy.ai/api/search-image?query=bright%20copper%20wire%20millberry%20scrap%20pure%20copper%20electrical%20cables%20shiny%20copper%20materials%20high%20conductivity%20metal%20recycling%20background%20white%20modern%20professional%20photography%20high%20quality%20detailed%20texture&width=400&height=300&seq=copper-millberry-grid&orientation=landscape',
-        rating: 4.9,
-        location: 'London, UK',
-        seller: 'London Metal Traders',
-        verified: true,
-        min_order: '100 kg',
-      },
-      // ... (remaining mock items unchanged)
-    ];
   };
 
   const nameToSlug = (name: string) =>
@@ -185,6 +104,24 @@ export default function ProductGrid({ category, sortBy, priceRange }: ProductGri
           <i className="ri-loader-4-line animate-spin text-2xl text-purple-600"></i>
         </div>
         <p className="text-gray-600">Loading products...</p>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="text-center py-12">
+        <div className="w-16 h-16 flex items-center justify-center mx-auto mb-4 bg-red-50 rounded-full">
+          <i className="ri-error-warning-line text-2xl text-red-500"></i>
+        </div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Products could not be loaded</h3>
+        <p className="text-gray-500 mb-4">{loadError}</p>
+        <button
+          onClick={fetchProducts}
+          className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-700 cursor-pointer"
+        >
+          Try again
+        </button>
       </div>
     );
   }
@@ -226,7 +163,7 @@ export default function ProductGrid({ category, sortBy, priceRange }: ProductGri
                 </div>
               )}
               <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-medium text-gray-700">
-                {categories[product.category] || product.category}
+                {categories[normalizeCategory(product.category)] || product.category}
               </div>
               {product.verified && (
                 <div className="absolute top-3 right-3 bg-green-500 text-white px-2 py-1 rounded text-xs font-medium flex items-center">

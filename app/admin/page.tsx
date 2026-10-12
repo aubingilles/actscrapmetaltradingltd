@@ -1,9 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import Header from '../../components/Header';
-import Footer from '../../components/Footer';
-import { supabase } from '../../lib/supabase';
+import type { Session } from '@supabase/supabase-js';
+import { supabase, CATEGORIES, errorMessage } from '../../lib/supabase';
 
 type Product = {
   id: string;
@@ -54,23 +53,59 @@ export default function AdminPage() {
     text: '',
   });
 
-  const categories: { id: string; name: string }[] = [
-    { id: 'ferrous', name: 'Ferrous Metals' },
-    { id: 'non-ferrous', name: 'Non-Ferrous Metals' },
-    { id: 'automotive', name: 'Automotive Scrap' },
-    { id: 'electronics', name: 'Electronic Waste' },
-    { id: 'industrial', name: 'Industrial Scrap' },
-    { id: 'cables', name: 'Cable & Wire Scrap' },
-    { id: 'paper', name: 'Paper & Cardboard' },
-    { id: 'fabric', name: 'Fabric & Textile' },
-    { id: 'machinery', name: 'Machinery & Equipment' },
-    { id: 'wood', name: 'Wood & Timber' },
-    { id: 'plastic', name: 'Plastic Scrap' },
-  ];
+  const categories = CATEGORIES;
+
+  const [session, setSession] = useState<Session | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
-    void fetchProducts();
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setAuthChecked(true);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+    });
+    return () => listener.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (session) void fetchProducts();
+  }, [session]);
+
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoggingIn(true);
+    setLoginError('');
+    const { error } = await supabase.auth.signInWithPassword({
+      email: loginEmail,
+      password: loginPassword,
+    });
+    if (error) setLoginError(errorMessage(error));
+    setIsLoggingIn(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setProducts([]);
+  };
+
+  // Empty optional fields are stored as NULL rather than empty strings.
+  const toPayload = (form: ProductForm) => ({
+    name: form.name.trim(),
+    category: form.category,
+    description: form.description.trim() || null,
+    image_url: form.image_url.trim() || null,
+    location: form.location.trim() || null,
+    seller: form.seller.trim() || null,
+    verified: form.verified,
+    min_order: form.min_order.trim() || null,
+    rating: Number.isFinite(form.rating) ? Math.min(5, Math.max(0, form.rating)) : null,
+  });
 
   const fetchProducts = async (): Promise<void> => {
     try {
@@ -83,7 +118,7 @@ export default function AdminPage() {
       setProducts((data as Product[]) ?? []);
     } catch (error) {
       console.error('Error fetching products:', error);
-      setMessage({ type: 'error', text: 'Failed to load products' });
+      setMessage({ type: 'error', text: `Failed to load products: ${errorMessage(error)}` });
     } finally {
       setIsLoading(false);
     }
@@ -117,16 +152,13 @@ export default function AdminPage() {
       if (editingProduct) {
         const { error } = await supabase
           .from('products')
-          .update({
-            ...formData,
-            updated_at: new Date().toISOString(),
-          })
+          .update(toPayload(formData))
           .eq('id', editingProduct.id);
 
         if (error) throw error;
         setMessage({ type: 'success', text: 'Product updated successfully!' });
       } else {
-        const { error } = await supabase.from('products').insert([formData]);
+        const { error } = await supabase.from('products').insert([toPayload(formData)]);
         if (error) throw error;
         setMessage({ type: 'success', text: 'Product created successfully!' });
       }
@@ -135,7 +167,7 @@ export default function AdminPage() {
       await fetchProducts();
     } catch (error) {
       console.error('Error saving product:', error);
-      setMessage({ type: 'error', text: 'Failed to save product. Please try again.' });
+      setMessage({ type: 'error', text: `Failed to save product: ${errorMessage(error)}` });
     } finally {
       setIsSubmitting(false);
     }
@@ -167,7 +199,7 @@ export default function AdminPage() {
       await fetchProducts();
     } catch (error) {
       console.error('Error deleting product:', error);
-      setMessage({ type: 'error', text: 'Failed to delete product' });
+      setMessage({ type: 'error', text: `Failed to delete product: ${errorMessage(error)}` });
     }
   };
 
@@ -187,9 +219,50 @@ export default function AdminPage() {
     setShowForm(false);
   };
 
+  if (!authChecked || !session) {
+    return (
+      <>
+        <div className="min-h-screen bg-gray-50 py-16 px-4">
+          <div className="max-w-md mx-auto bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">Admin Login</h1>
+            {!authChecked ? (
+              <p className="text-gray-600">Loading...</p>
+            ) : (
+              <form onSubmit={handleLogin} className="space-y-4">
+                <input
+                  type="email"
+                  value={loginEmail}
+                  onChange={e => setLoginEmail(e.target.value)}
+                  required
+                  placeholder="Email"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                />
+                <input
+                  type="password"
+                  value={loginPassword}
+                  onChange={e => setLoginPassword(e.target.value)}
+                  required
+                  placeholder="Password"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                />
+                {loginError && <p className="text-sm text-red-600">{loginError}</p>}
+                <button
+                  type="submit"
+                  disabled={isLoggingIn}
+                  className="w-full bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 disabled:opacity-50 cursor-pointer"
+                >
+                  {isLoggingIn ? 'Signing in...' : 'Sign in'}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
-      <Header />
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-8">
@@ -197,12 +270,20 @@ export default function AdminPage() {
               <h1 className="text-3xl font-bold text-gray-900">Product Management</h1>
               <p className="text-gray-600 mt-2">Create and manage your scrap metal products</p>
             </div>
+            <div className="flex items-center gap-3">
+            <button
+              onClick={handleLogout}
+              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer whitespace-nowrap"
+            >
+              Log out
+            </button>
             <button
               onClick={() => setShowForm(!showForm)}
               className="bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors cursor-pointer whitespace-nowrap"
             >
               {showForm ? 'Cancel' : 'Add New Product'}
             </button>
+            </div>
           </div>
 
           {message.text && (
@@ -544,7 +625,6 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
-      <Footer />
     </>
   );
 }
