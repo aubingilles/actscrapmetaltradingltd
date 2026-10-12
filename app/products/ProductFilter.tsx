@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import { fetchCategoryCounts } from '../../lib/supabase';
 
 interface ProductFilterProps {
   selectedCategory: string;
@@ -50,53 +50,19 @@ export default function ProductFilter({
   ];
 
   useEffect(() => {
-    fetchCategoryCounts();
+    loadCategoryCounts();
   }, []);
 
-  const fetchCategoryCounts = async () => {
+  const loadCategoryCounts = async () => {
     try {
-      // Get total count
-      const { count: total, error: totalError } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true });
-
-      if (totalError) throw totalError;
-      setTotalCount(total || 0);
-
-      // Get counts by category
-      const counts: {[key: string]: number} = {};
-      
-      for (const category of categories) {
-        if (category.id === 'all') continue;
-        
-        const { count, error } = await supabase
-          .from('products')
-          .select('*', { count: 'exact', head: true })
-          .eq('category', category.id);
-
-        if (error) throw error;
-        counts[category.id] = count || 0;
-      }
-
+      const { total, counts } = await fetchCategoryCounts();
+      setTotalCount(total);
       setCategoryCounts(counts);
     } catch (error) {
+      // Show zero counts rather than invented ones so they match what the grid can display.
       console.error('Error fetching category counts:', error);
-      // Fallback to mock data if database fails
-      const mockCounts = {
-        'ferrous': 3,
-        'non-ferrous': 3,
-        'automotive': 2,
-        'electronics': 2,
-        'industrial': 1,
-        'cables': 2,
-        'paper': 2,
-        'fabric': 2,
-        'machinery': 2,
-        'wood': 2,
-        'plastic': 3
-      };
-      setCategoryCounts(mockCounts);
-      setTotalCount(24);
+      setCategoryCounts({});
+      setTotalCount(0);
     }
   };
 

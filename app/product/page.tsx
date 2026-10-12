@@ -1,15 +1,11 @@
 'use client';
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { useLanguage } from '../../components/LanguageContext';
 import { translateProductData } from '../../lib/translator';
+import { supabase } from '../../lib/supabase';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 function ProductContent() {
   const searchParams = useSearchParams();
