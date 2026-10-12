@@ -27,6 +27,7 @@ alter table public.products add column if not exists min_order text;
 alter table public.products add column if not exists rating numeric(2,1);
 alter table public.products add column if not exists created_at timestamptz not null default now();
 alter table public.products add column if not exists updated_at timestamptz not null default now();
+alter table public.products add column if not exists source_url text; -- original listing, admin-only
 
 create index if not exists products_category_idx on public.products (category);
 create index if not exists products_created_at_idx on public.products (created_at desc);
@@ -82,7 +83,10 @@ create policy "Admins can delete products"
   using (true);
 
 -- Visitors may only read; writes go through the signed-in admin policies above.
-grant select on public.products to anon;
+-- Column-level read grant so anonymous visitors cannot read source_url.
+revoke select on public.products from anon;
+grant select (id, name, category, description, image_url, location, seller, verified,
+              min_order, rating, created_at, updated_at) on public.products to anon;
 revoke insert, update, delete, truncate, references, trigger on public.products from anon;
 grant select, insert, update, delete on public.products to authenticated;
 
